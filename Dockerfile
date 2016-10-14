@@ -6,20 +6,8 @@ MAINTAINER Baitao Ji, dreambt@gmail.com
 ENV KONG_VERSION 0.8.3
 ENV YOP_NGINX_INSTALL_DIR /opt
 
-# update source  
-RUN echo "deb http://archive.ubuntu.com/ubuntu/ trusty main restricted universe multiverse"> /etc/apt/sources.list  
-RUN echo "deb http://archive.ubuntu.com/ubuntu/ trusty-security main restricted universe multiverse">> /etc/apt/sources.list  
-RUN echo "deb http://archive.ubuntu.com/ubuntu/ trusty-updates main restricted universe multiverse">> /etc/apt/sources.list  
-RUN echo "deb http://archive.ubuntu.com/ubuntu/ trusty-proposed main restricted universe multiverse">> /etc/apt/sources.list  
-RUN echo "deb http://archive.ubuntu.com/ubuntu/ trusty-backports main restricted universe multiverse">> /etc/apt/sources.list  
-RUN echo "deb-src http://archive.ubuntu.com/ubuntu/ trusty main restricted universe multiverse">> /etc/apt/sources.list  
-RUN echo "deb-src http://archive.ubuntu.com/ubuntu/ trusty-security main restricted universe multiverse">> /etc/apt/sources.list  
-RUN echo "deb-src http://archive.ubuntu.com/ubuntu/ trusty-updates main restricted universe multiverse">> /etc/apt/sources.list  
-RUN echo "deb-src http://archive.ubuntu.com/ubuntu/ trusty-proposed main restricted universe multiverse">> /etc/apt/sources.list  
-RUN echo "deb-src http://archive.ubuntu.com/ubuntu/ trusty-backports main restricted universe multiverse">> /etc/apt/sources.list  
-
 RUN apt-get update
-RUN apt-get -y -f install vim git unzip g++ gcc perl
+RUN apt-get -y -f install vim git unzip g++ perl
 RUN apt-get -y -f install libpcre3=1:8.31-2ubuntu2.3 libpcre3-dev
 RUN apt-get -y -f install libuuid1=2.20.1-5.1ubuntu20.7 uuid-dev
 RUN apt-get -y -f install libssl1.0.0=1.0.1f-1ubuntu2.21 libssl-dev libmcrypt-dev
@@ -64,18 +52,16 @@ RUN git clone https://github.com/yp-creative/lua-codec.git
 WORKDIR lua-codec/src
 RUN make && make install DESTDIR="/usr/local/kong/lib"
 
+ADD mcrypt.so /usr/local/kong/lib/mcrypt.so
 WORKDIR $YOP_NGINX_INSTALL_DIR
 RUN git clone https://github.com/yp-creative/lua-mcrypt.git
 WORKDIR lua-mcrypt
 RUN make && make install DESTDIR="/usr/local/kong/lib"
 
-RUN ulimit -SHn 4096
-RUN echo "* soft nofile 4096" >> /etc/security/limits.conf
-RUN echo "* hard nofile 65536" >> /etc/security/limits.conf
-#RUN echo 8061540 > /proc/sys/fs/file-max
-
-# ADD nginx /home/nginx
+RUN apt-get install -y supervisor
+RUN mkdir -p /var/log/supervisor
+ADD supervisord.conf /etc/supervisor/supervisord.conf
 
 EXPOSE 8000 8443 8001 7946
 
-CMD ["kong", "start"]
+CMD ["/usr/bin/supervisord"]
