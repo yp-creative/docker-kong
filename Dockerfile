@@ -52,16 +52,19 @@ RUN git clone https://github.com/yp-creative/lua-codec.git
 WORKDIR lua-codec/src
 RUN make && make install DESTDIR="/usr/local/kong/lib"
 
-ADD mcrypt.so /usr/local/kong/lib/mcrypt.so
 WORKDIR $YOP_NGINX_INSTALL_DIR
 RUN git clone https://github.com/yp-creative/lua-mcrypt.git
 WORKDIR lua-mcrypt
 RUN make && make install DESTDIR="/usr/local/kong/lib"
 
-RUN apt-get install -y supervisor
-RUN mkdir -p /var/log/supervisor
-ADD supervisord.conf /etc/supervisor/supervisord.conf
+ADD mcrypt.so /usr/local/kong/lib/mcrypt.so
+
+RUN wget -O /usr/local/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.1.3/dumb-init_1.1.3_amd64 && \
+    chmod +x /usr/local/bin/dumb-init
+
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod 775 /docker-entrypoint.sh
+ENTRYPOINT ["/docker-entrypoint.sh"]
 
 EXPOSE 8000 8443 8001 7946
-
-CMD ["/usr/bin/supervisord"]
+CMD ["kong", "start"]
